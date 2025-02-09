@@ -1,29 +1,23 @@
-const { Client, LocalAuth } = require("whatsapp-web.js");
-const qrcode = require('qrcode-terminal');
+const client = require("./src/client/client");
+const qrcode = require("qrcode-terminal");
+const {handleMessage} = require("./src/events/handleMessage");
+const { connectToOpenAi } = require("./src/lib/assistantService");
+const { connectToDatabase } = require("./src/lib/mongoose");
 
-const client = new Client({
-    authStrategy: new LocalAuth({ clientId: "canteenByAi" }),
-    puppeteer: {
-      headless: true,
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage",
-      ]
-    },
-  });
-client.on('qr', (qr) => {
-    qrcode.generate(qr, { small: true });
+client.on("qr", (qr) => {
+  qrcode.generate(qr, { small: true });
 });
 
-client.on('ready', () => {
-    console.log('Client is ready!');
+client.on("ready", async () => {
+  await connectToOpenAi();
+  await connectToDatabase();
+  console.log("Client is ready!");
 });
 
-client.on('message', msg => {
-    if (msg.body == '!ping') {
-        msg.reply('pong');
-    }
+client.on("message", (msg) => {
+  handleMessage(msg);
 });
 
 client.initialize();
+
+module.exports = client;
